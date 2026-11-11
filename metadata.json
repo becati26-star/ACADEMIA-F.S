@@ -1,0 +1,6 @@
+{
+  "name": "ACADEMIA F.S. - Sistema de Gestión de Futsal",
+  "description": "Plataforma integral para ACADEMIA F.S. (Futsal): Sub-18, Sub-20 y Primera C con doble ficha, convocatorias quinteto inicial, socios, cuotas en Bolivianos (Bs) y tesorería.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

@@ -9,7 +9,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { clubStorage } from './services/clubStorage';
-import { Player, Socio, MatchRoster, AttendanceRecord, Donation, ClubExpense, AuditLog, Category, UserRole } from './types';
+import { Player, Socio, MatchRoster, AttendanceRecord, Donation, ClubExpense, AuditLog, Category, UserRole, TeamHistory } from './types';
 import { Header } from './components/Header';
 import { LoginView } from './components/LoginView';
 import { DashboardView } from './components/DashboardView';
@@ -20,6 +20,7 @@ import { AttendanceView } from './components/AttendanceView';
 import { ConvocatoriasView } from './components/ConvocatoriasView';
 import { TreasuryView } from './components/TreasuryView';
 import { ReportsView } from './components/ReportsView';
+import { TeamHistoryView } from './components/TeamHistoryView';
 import { SecurityAndNeonView } from './components/SecurityAndNeonView';
 import { ShieldAlert, ArrowRight } from 'lucide-react';
 
@@ -45,6 +46,7 @@ export default function App() {
   const [expenses, setExpenses] = useState<ClubExpense[]>(() => clubStorage.getExpenses());
   const [auditLogs, setAuditLogs] = useState<AuditLog[]>(() => clubStorage.getAuditLogs());
   const [categories, setCategories] = useState<Category[]>(() => clubStorage.getCategories());
+  const [teamHistory, setTeamHistory] = useState<TeamHistory>(() => clubStorage.getTeamHistory());
 
   // Re-sync on storage change
   useEffect(() => {
@@ -57,6 +59,7 @@ export default function App() {
       setExpenses(clubStorage.getExpenses());
       setAuditLogs(clubStorage.getAuditLogs());
       setCategories(clubStorage.getCategories());
+      setTeamHistory(clubStorage.getTeamHistory());
       setActiveRole(clubStorage.getActiveUserRole());
     });
     return unsubscribe;
@@ -165,6 +168,8 @@ export default function App() {
                 socios={socios}
                 rosters={rosters}
                 attendances={attendances}
+                donations={donations}
+                expenses={expenses}
                 financialSummary={financialSummary}
                 onNavigate={(tab) => {
                   if (activeRole.allowedTabs?.includes(tab)) {
@@ -260,6 +265,15 @@ export default function App() {
                 onExportPlayersCSV={() => triggerCSVDownload(clubStorage.exportPlayersCSV(), 'reporte_jugadores_futsal.csv')}
                 onExportSociosCSV={() => triggerCSVDownload(clubStorage.exportSociosCSV(), 'reporte_socios_futsal.csv')}
                 onExportFinanceCSV={() => triggerCSVDownload(clubStorage.exportFinancialLedgerCSV(), 'reporte_financiero_junta_bs.csv')}
+              />
+            )}
+
+            {activeTab === 'historia' && (
+              <TeamHistoryView
+                teamHistory={teamHistory}
+                activeRole={activeRole}
+                onSaveHistory={(h) => clubStorage.saveTeamHistory(h)}
+                onResetHistory={() => clubStorage.resetTeamHistory()}
               />
             )}
 

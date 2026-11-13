@@ -28,6 +28,7 @@ export const Header: React.FC<HeaderProps> = ({
   onLogout
 }) => {
   const allNavItems = [
+    { id: 'historia', label: 'Historia del Equipo' },
     { id: 'dashboard', label: 'Tablero' },
     { id: 'players', label: 'Jugadores' },
     { id: 'mensualidades', label: 'Mensualidades' },
@@ -85,14 +86,14 @@ export const Header: React.FC<HeaderProps> = ({
           </div>
 
           {/* Zone 2: Filtered navigation links */}
-          <nav className="hidden lg:flex items-center gap-1 xl:gap-1.5">
+          <nav className="hidden lg:flex items-center gap-1 overflow-x-auto scrollbar-none py-1">
             {navItems.map((item) => {
               const isActive = activeTab === item.id;
               return (
                 <button
                   key={item.id}
                   onClick={() => setActiveTab(item.id)}
-                  className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors whitespace-nowrap shrink-0 ${
+                  className={`px-2.5 py-1.5 text-xs font-medium rounded-md transition-colors whitespace-nowrap shrink-0 cursor-pointer ${
                     isActive
                       ? 'bg-amber-500/15 text-amber-300 font-semibold border border-amber-500/40 shadow-[0_0_12px_rgba(212,175,55,0.12)]'
                       : 'text-slate-300 hover:text-white hover:bg-slate-800/80'

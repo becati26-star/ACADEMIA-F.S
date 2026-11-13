@@ -18,7 +18,8 @@ import {
   Category,
   UserRole,
   RoleType,
-  FinancialSummary
+  FinancialSummary,
+  TeamHistory
 } from '../types';
 import {
   INITIAL_PLAYERS,
@@ -30,6 +31,7 @@ import {
   INITIAL_AUDIT_LOGS,
   INITIAL_CATEGORIES,
   INITIAL_ROLES,
+  INITIAL_TEAM_HISTORY,
   NEON_TECH_POSTGRES_SCHEMA
 } from '../data/mockData';
 
@@ -42,6 +44,7 @@ const STORAGE_KEYS = {
   EXPENSES: 'academia_fs_expenses_v3',
   AUDIT_LOGS: 'academia_fs_audit_logs_v3',
   CATEGORIES: 'academia_fs_categories_v3',
+  TEAM_HISTORY: 'academia_fs_team_history_v1',
   ACTIVE_ROLE: 'academia_fs_active_role_v3',
   CURRENT_USER: 'academia_fs_current_user_v3'
 };
@@ -94,6 +97,9 @@ class ClubStorageService {
     if (!localStorage.getItem(STORAGE_KEYS.ACTIVE_ROLE)) {
       localStorage.setItem(STORAGE_KEYS.ACTIVE_ROLE, JSON.stringify(INITIAL_ROLES[0]));
     }
+    if (!localStorage.getItem(STORAGE_KEYS.TEAM_HISTORY)) {
+      localStorage.setItem(STORAGE_KEYS.TEAM_HISTORY, JSON.stringify(INITIAL_TEAM_HISTORY));
+    }
   }
 
   public resetToDefault() {
@@ -104,6 +110,7 @@ class ClubStorageService {
     localStorage.setItem(STORAGE_KEYS.DONATIONS, JSON.stringify(INITIAL_DONATIONS));
     localStorage.setItem(STORAGE_KEYS.EXPENSES, JSON.stringify(INITIAL_EXPENSES));
     localStorage.setItem(STORAGE_KEYS.AUDIT_LOGS, JSON.stringify(INITIAL_AUDIT_LOGS));
+    localStorage.setItem(STORAGE_KEYS.TEAM_HISTORY, JSON.stringify(INITIAL_TEAM_HISTORY));
     this.notify();
   }
 
@@ -584,6 +591,64 @@ class ClubStorageService {
       'info'
     );
     this.notify();
+  }
+
+  // Team History (Editable ONLY by Administrador, visible to Administrador, Presidente & Director Técnico)
+  public getTeamHistory(): TeamHistory {
+    const raw = localStorage.getItem(STORAGE_KEYS.TEAM_HISTORY);
+    if (!raw) return INITIAL_TEAM_HISTORY;
+    try {
+      return JSON.parse(raw) as TeamHistory;
+    } catch {
+      return INITIAL_TEAM_HISTORY;
+    }
+  }
+
+  public saveTeamHistory(history: TeamHistory): { success: boolean; error?: string } {
+    const activeRole = this.getActiveUserRole();
+    if (activeRole.role !== 'administrador') {
+      return {
+        success: false,
+        error: 'Acceso denegado: solo el Administrador puede editar la Historia del Equipo.'
+      };
+    }
+
+    const updated: TeamHistory = {
+      ...history,
+      ultimaEdicionFecha: new Date().toISOString().split('T')[0],
+      ultimaEdicionPor: `${activeRole.name} (${activeRole.title})`
+    };
+
+    localStorage.setItem(STORAGE_KEYS.TEAM_HISTORY, JSON.stringify(updated));
+    this.addAuditLog(
+      'Edición de Historia del Equipo',
+      'Seguridad',
+      'team-history',
+      `Historia institucional actualizada por ${activeRole.name} (${updated.fundadores.length} fundadores, ${updated.hitos.length} hitos)`,
+      'info'
+    );
+    this.notify();
+    return { success: true };
+  }
+
+  public resetTeamHistory(): { success: boolean; error?: string } {
+    const activeRole = this.getActiveUserRole();
+    if (activeRole.role !== 'administrador') {
+      return {
+        success: false,
+        error: 'Acceso denegado: solo el Administrador puede restaurar la Historia del Equipo.'
+      };
+    }
+    localStorage.setItem(STORAGE_KEYS.TEAM_HISTORY, JSON.stringify(INITIAL_TEAM_HISTORY));
+    this.addAuditLog(
+      'Restauración de Historia del Equipo',
+      'Seguridad',
+      'team-history',
+      'Historia del equipo restaurada a los valores fundacionales',
+      'advertencia'
+    );
+    this.notify();
+    return { success: true };
   }
 
   // Audit Logs (ISO 27001)

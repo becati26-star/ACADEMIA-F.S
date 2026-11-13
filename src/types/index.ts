@@ -286,3 +286,31 @@ export interface AuditLog {
   ip: string;
   nivelRiesgo: 'info' | 'advertencia' | 'critico';
 }
+
+export interface FounderMember {
+  id: string;
+  nombre: string;
+  cargoFundador: string;
+  anioIngreso: string;
+  aporte: string;
+}
+
+export interface HistoryMilestone {
+  id: string;
+  anio: string;
+  titulo: string;
+  descripcion: string;
+}
+
+export interface TeamHistory {
+  nombreClub: string;
+  fechaFundacion: string;
+  ciudadOrigen: string;
+  lemaFundacional: string;
+  comoSeCreo: string;
+  misionInstitucional: string;
+  fundadores: FounderMember[];
+  hitos: HistoryMilestone[];
+  ultimaEdicionFecha: string;
+  ultimaEdicionPor: string;
+}

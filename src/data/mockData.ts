@@ -7,7 +7,7 @@
  * Currency: Bolivianos (Bs)
  */
 
-import { Category, Player, Socio, AttendanceRecord, MatchRoster, Donation, ClubExpense, AuditLog, UserRole } from '../types';
+import { Category, Player, Socio, AttendanceRecord, MatchRoster, Donation, ClubExpense, AuditLog, UserRole, TeamHistory } from '../types';
 
 export const CLUB_INFO = {
   nombre: "ACADEMIA F.S.",
@@ -36,7 +36,7 @@ export const INITIAL_ROLES: UserRole[] = [
     email: 'dt@academiafs.bo',
     password: 'tecnico2026.',
     permissions: ['attendance:write', 'roster:write', 'players:stats:write', 'tactics:manage'],
-    allowedTabs: ['dashboard', 'players', 'mensualidades', 'attendance', 'convocatorias']
+    allowedTabs: ['dashboard', 'players', 'mensualidades', 'attendance', 'convocatorias', 'historia']
   },
   {
     id: 'user-presi',
@@ -47,7 +47,7 @@ export const INITIAL_ROLES: UserRole[] = [
     email: 'presidente@academiafs.bo',
     password: 'Presidencia2026$',
     permissions: ['members:write', 'finance:write', 'audit:read', 'reports:executive'],
-    allowedTabs: ['dashboard', 'players', 'mensualidades', 'socios', 'treasury', 'reports']
+    allowedTabs: ['dashboard', 'players', 'mensualidades', 'socios', 'treasury', 'reports', 'historia']
   },
   {
     id: 'user-admin',
@@ -58,7 +58,7 @@ export const INITIAL_ROLES: UserRole[] = [
     email: 'admin@academiafs.bo',
     password: 'admin1399..',
     permissions: ['all'],
-    allowedTabs: ['dashboard', 'players', 'mensualidades', 'socios', 'attendance', 'convocatorias', 'treasury', 'reports', 'neon']
+    allowedTabs: ['dashboard', 'players', 'mensualidades', 'socios', 'attendance', 'convocatorias', 'treasury', 'reports', 'historia', 'neon']
   },
   {
     id: 'user-tesorero',
@@ -1379,6 +1379,75 @@ export const INITIAL_AUDIT_LOGS: AuditLog[] = [
     nivelRiesgo: 'critico'
   }
 ];
+
+export const INITIAL_TEAM_HISTORY: TeamHistory = {
+  nombreClub: 'ACADEMIA F.S.',
+  fechaFundacion: '14 de Marzo de 2018',
+  ciudadOrigen: 'Bolivia · Asociación Departamental de Fútbol de Salón (ADFS)',
+  lemaFundacional: 'Técnica, Dinámica y Pasión por el Fútbol de Salón',
+  comoSeCreo:
+    'ACADEMIA F.S. nació en marzo de 2018 a partir de la iniciativa de exjugadores de futsal, entrenadores formativos y socios impulsores que compartían la visión de crear una escuela seria de fútbol de salón. El proyecto comenzó con sesiones nocturnas en coliseos barriales con un primer grupo de 14 jóvenes apasionados por la pelota pesada y el juego rápido en 40x20 metros.\n\nCon el respaldo organizativo de la directiva fundadora y el compromiso de las familias, el club formalizó su afiliación oficial ante la Asociación Departamental de Fútbol de Salón (ADFS), estructurando progresivamente sus divisiones Sub-18, Sub-20 y el plantel mayor de Primera C.',
+  misionInstitucional:
+    'Formar deportistas íntegros dentro y fuera de la cancha, promoviendo la disciplina táctica, el compañerismo y la proyección competitiva hacia las principales categorías del fútbol de salón boliviano.',
+  fundadores: [
+    {
+      id: 'fnd-1',
+      nombre: 'Lic. Carlos Mendoza Rivas',
+      cargoFundador: 'Presidente Fundador',
+      anioIngreso: '2018',
+      aporte: 'Impulsó la personería institucional, la afiliación oficial ante la ADFS y la estructura dirigencial del club.'
+    },
+    {
+      id: 'fnd-2',
+      nombre: 'Prof. Diego Alejandro Vera',
+      cargoFundador: 'Director Técnico Fundador',
+      anioIngreso: '2018',
+      aporte: 'Diseñó la metodología de entrenamiento en futsal 1-2-1 y formó las primeras generaciones Sub-18 y Sub-20.'
+    },
+    {
+      id: 'fnd-3',
+      nombre: 'Ing. Guillermo Bustamante Rivas',
+      cargoFundador: 'Socio Fundador & Mecenas',
+      anioIngreso: '2018',
+      aporte: 'Aportó el equipamiento inicial de balones, indumentaria y respaldo financiero para los primeros torneos oficiales.'
+    },
+    {
+      id: 'fnd-4',
+      nombre: 'Ing. Roberto Arce',
+      cargoFundador: 'Coordinador Administrativo Fundador',
+      anioIngreso: '2018',
+      aporte: 'Organizó el padrón de jugadores, actas de fundación y el archivo histórico y reglamentario de ACADEMIA F.S.'
+    }
+  ],
+  hitos: [
+    {
+      id: 'hit-1',
+      anio: '2018',
+      titulo: 'Acta de Fundación e Inicio Formativo',
+      descripcion: 'Se firma el acta constitutiva de ACADEMIA F.S. con el primer plantel juvenil y entrenamientos semanales en cancha parquet.'
+    },
+    {
+      id: 'hit-2',
+      anio: '2021',
+      titulo: 'Consolidación de Canteras Sub-18 y Sub-20',
+      descripcion: 'Se inaugura el programa de doble ficha juvenil para proyectar talentos propios hacia competencias oficiales.'
+    },
+    {
+      id: 'hit-3',
+      anio: '2024',
+      titulo: 'Ingreso a Torneos Oficiales de Ascenso ADFS',
+      descripcion: 'El equipo mayor debuta en la Primera "C" con base formada íntegramente en las divisiones inferiores de la academia.'
+    },
+    {
+      id: 'hit-4',
+      anio: '2026',
+      titulo: 'Participación Simultánea Primera "C" Serie "B" y Sub-20 Serie "D"',
+      descripcion: 'ACADEMIA F.S. compite oficialmente en el Clausura 2026 con presencia destacada en ambas categorías y gestión digital integral.'
+    }
+  ],
+  ultimaEdicionFecha: '2026-11-13',
+  ultimaEdicionPor: 'Ing. Roberto Arce (Administrador)'
+};
 
 export const NEON_TECH_POSTGRES_SCHEMA = `-- =====================================================================
 -- ACADEMIA F.S. - Database DDL Schema for Neon Tech PostgreSQL

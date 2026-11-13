@@ -3,8 +3,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Player, Category, PlayerPosition, CategoryId } from '../types';
+import { whatsappService, WhatsAppReminderLog } from '../services/whatsappService';
+import { WhatsAppReminderModal } from './WhatsAppReminderModal';
 import {
   Search,
   Plus,
@@ -26,7 +28,13 @@ import {
   UserCheck,
   Scale,
   Ruler,
-  Droplet
+  Droplet,
+  Camera,
+  Upload,
+  Trash2,
+  Image as ImageIcon,
+  MessageCircle,
+  ExternalLink
 } from 'lucide-react';
 
 interface PlayersViewProps {
@@ -100,7 +108,67 @@ export const PlayersView: React.FC<PlayersViewProps> = ({
   const pendingPlayers = players.filter((p) => p.estadoCuota === 'pendiente' || p.estadoCuota === 'moroso');
   const totalPendingBs = pendingPlayers.reduce((acc, p) => acc + p.cuotaMensualMonto, 0);
 
-  // New Player Form State (including editable birth date and legal guardian)
+  // WhatsApp modal & tracking state
+  const [isWhatsAppModalOpen, setIsWhatsAppModalOpen] = useState(false);
+  const [whatsAppInitialPlayer, setWhatsAppInitialPlayer] = useState<Player | null>(null);
+  const [whatsAppLogs, setWhatsAppLogs] = useState<WhatsAppReminderLog[]>(() => whatsappService.getLogs());
+
+  useEffect(() => {
+    const unsub = whatsappService.subscribe(() => {
+      setWhatsAppLogs(whatsappService.getLogs());
+    });
+    return unsub;
+  }, []);
+
+  const PRESET_PLAYER_AVATARS = [
+    { id: 'av-1', label: 'Delantero / Ala', url: 'https://images.unsplash.com/photo-1543326727-cf6c39e8f84c?w=300&auto=format&fit=crop&q=80' },
+    { id: 'av-2', label: 'Arquero Reflejos', url: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=300&auto=format&fit=crop&q=80' },
+    { id: 'av-3', label: 'Cierre Defensivo', url: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=300&auto=format&fit=crop&q=80' },
+    { id: 'av-4', label: 'Pívot Goleador', url: 'https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?w=300&auto=format&fit=crop&q=80' }
+  ];
+
+  // Helper to handle image file upload with lightweight compression
+  const handleImageFileUpload = (e: React.ChangeEvent<HTMLInputElement>, isEditMode: boolean = false) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        const maxDim = 320;
+        let w = img.width;
+        let h = img.height;
+        if (w > h) {
+          if (w > maxDim) {
+            h = Math.round((h * maxDim) / w);
+            w = maxDim;
+          }
+        } else {
+          if (h > maxDim) {
+            w = Math.round((w * maxDim) / h);
+            h = maxDim;
+          }
+        }
+        canvas.width = w;
+        canvas.height = h;
+        const ctx = canvas.getContext('2d');
+        ctx?.drawImage(img, 0, 0, w, h);
+        const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.82);
+
+        if (isEditMode && editPlayerForm) {
+          setEditPlayerForm({ ...editPlayerForm, foto: compressedDataUrl });
+        } else {
+          setNewPlayerForm((prev) => ({ ...prev, foto: compressedDataUrl }));
+        }
+      };
+      img.src = event.target?.result as string;
+    };
+    reader.readAsDataURL(file);
+  };
+
+  // New Player Form State (including editable birth date, photo and legal guardian)
   const [newPlayerForm, setNewPlayerForm] = useState({
     nombre: '',
     apellidos: '',
@@ -109,6 +177,7 @@ export const PlayersView: React.FC<PlayersViewProps> = ({
     fechaNacimiento: '2009-04-12',
     telefono: '',
     email: '',
+    foto: '',
     posicion: 'Ala Izquierda' as PlayerPosition,
     piernaHabil: 'Derecha' as 'Derecha' | 'Izquierda' | 'Ambidiestro',
     categoriaId: 'sub-18' as CategoryId,
@@ -238,6 +307,7 @@ export const PlayersView: React.FC<PlayersViewProps> = ({
       fechaNacimiento: newPlayerForm.fechaNacimiento || '2009-04-12',
       telefono: newPlayerForm.telefono || '',
       email: newPlayerForm.email || '',
+      foto: newPlayerForm.foto || undefined,
       posicion: newPlayerForm.posicion,
       piernaHabil: newPlayerForm.piernaHabil,
       categoriaId: newPlayerForm.categoriaId,
@@ -320,7 +390,17 @@ export const PlayersView: React.FC<PlayersViewProps> = ({
             </div>
           </div>
 
-          <div className="flex items-center gap-2 shrink-0">
+          <div className="flex flex-wrap items-center gap-2 shrink-0">
+            <button
+              onClick={() => {
+                setWhatsAppInitialPlayer(null);
+                setIsWhatsAppModalOpen(true);
+              }}
+              className="px-3 py-1.5 rounded-lg text-xs font-bold bg-emerald-600 hover:bg-emerald-500 text-white transition-all flex items-center gap-1.5 shadow-md cursor-pointer"
+            >
+              <MessageCircle className="w-3.5 h-3.5" />
+              Recordar por WhatsApp ({pendingPlayers.length})
+            </button>
             <button
               onClick={() => setFilterPendingOnly(!filterPendingOnly)}
               className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 ${
@@ -464,13 +544,26 @@ export const PlayersView: React.FC<PlayersViewProps> = ({
                       {/* Name & Dorsal */}
                       <td className="py-3 px-4 whitespace-nowrap">
                         <div className="flex items-center gap-3">
-                          <div className={`w-8 h-8 rounded-full border flex items-center justify-center font-mono font-bold text-xs ${
-                            isPending
-                              ? 'bg-rose-950 border-rose-600 text-rose-300'
-                              : 'bg-slate-800 border-slate-700 text-amber-400'
-                          }`}>
-                            #{p.dorsal}
-                          </div>
+                          {p.foto ? (
+                            <div className="relative shrink-0">
+                              <img
+                                src={p.foto}
+                                alt={p.nombre}
+                                className="w-9 h-9 rounded-xl object-cover border border-amber-500/60 shadow-sm"
+                              />
+                              <span className="absolute -bottom-1 -right-1 px-1 py-0.2 bg-slate-950 text-amber-400 font-mono font-bold text-[9px] rounded border border-slate-700">
+                                #{p.dorsal}
+                              </span>
+                            </div>
+                          ) : (
+                            <div className={`w-8 h-8 rounded-full border flex items-center justify-center font-mono font-bold text-xs shrink-0 ${
+                              isPending
+                                ? 'bg-rose-950 border-rose-600 text-rose-300'
+                                : 'bg-slate-800 border-slate-700 text-amber-400'
+                            }`}>
+                              #{p.dorsal}
+                            </div>
+                          )}
                           <div>
                             <div className="flex items-center gap-2">
                               <span className={`font-semibold transition-colors ${
@@ -564,18 +657,54 @@ export const PlayersView: React.FC<PlayersViewProps> = ({
 
                       {/* Action */}
                       <td className="py-3 px-4 text-right whitespace-nowrap space-x-1.5">
-                        {isPending && (
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleOpenPlayer(p, 'pagos');
-                            }}
-                            className="px-2 py-1 text-xs rounded bg-emerald-600 hover:bg-emerald-500 text-white font-bold inline-flex items-center gap-1 shadow-sm transition-colors"
-                          >
-                            <CreditCard className="w-3 h-3" />
-                            Cobrar
-                          </button>
-                        )}
+                        {isPending && (() => {
+                          const primary = whatsappService.getPrimaryPlayerTarget(p);
+                          const msg = whatsappService.buildPlayerMessage(p, primary?.targetType || 'jugador', currentMonth);
+                          const waUrl = whatsappService.buildWhatsAppUrl(primary?.phone || p.telefono || '', msg);
+                          const alreadySent = whatsAppLogs.some((l) => l.entityId === p.id);
+
+                          return (
+                            <>
+                              <a
+                                href={waUrl}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  whatsappService.logDispatch({
+                                    entityId: p.id,
+                                    entityType: 'player',
+                                    entityName: `${p.nombre} ${p.apellidos}`,
+                                    recipientName: primary?.recipientName || `${p.nombre} ${p.apellidos}`,
+                                    targetType: primary?.targetType || 'jugador',
+                                    phone: primary?.phone || p.telefono || 'WhatsApp',
+                                    amountBs: p.cuotaMensualMonto,
+                                    period: currentMonth
+                                  });
+                                }}
+                                title={`Enviar recordatorio por WhatsApp a ${primary?.recipientName || p.nombre}`}
+                                className={`px-2 py-1 text-xs rounded font-bold inline-flex items-center gap-1 shadow-sm transition-colors ${
+                                  alreadySent
+                                    ? 'bg-emerald-950 text-emerald-300 border border-emerald-600/60 hover:bg-emerald-900'
+                                    : 'bg-emerald-600 hover:bg-emerald-500 text-white'
+                                }`}
+                              >
+                                <MessageCircle className="w-3 h-3" />
+                                {alreadySent ? 'WA Enviado' : 'WhatsApp'}
+                              </a>
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleOpenPlayer(p, 'pagos');
+                                }}
+                                className="px-2 py-1 text-xs rounded bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold inline-flex items-center gap-1 shadow-sm transition-colors"
+                              >
+                                <CreditCard className="w-3 h-3" />
+                                Cobrar
+                              </button>
+                            </>
+                          );
+                        })()}
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
@@ -584,7 +713,7 @@ export const PlayersView: React.FC<PlayersViewProps> = ({
                           className="px-2.5 py-1 text-xs rounded bg-slate-800 text-slate-200 hover:bg-slate-700 transition-colors inline-flex items-center gap-1"
                         >
                           <Edit3 className="w-3 h-3 text-amber-400" />
-                          Ficha & Editar
+                          Ficha &amp; Editar
                         </button>
                       </td>
                     </tr>
@@ -602,14 +731,27 @@ export const PlayersView: React.FC<PlayersViewProps> = ({
           <div className="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-4xl max-h-[90vh] overflow-y-auto shadow-2xl text-slate-200">
             {/* Header */}
             <div className="p-5 border-b border-slate-800 flex items-start justify-between bg-slate-950 sticky top-0 z-10">
-              <div className="flex items-center gap-3">
-                <div className={`w-12 h-12 rounded-full border-2 flex items-center justify-center text-lg font-mono font-bold ${
-                  selectedPlayer.estadoCuota === 'pendiente' || selectedPlayer.estadoCuota === 'moroso'
-                    ? 'bg-rose-950 border-rose-500 text-rose-300'
-                    : 'bg-slate-800 border-amber-500 text-amber-400'
-                }`}>
-                  #{selectedPlayer.dorsal}
-                </div>
+              <div className="flex items-center gap-3.5">
+                {selectedPlayer.foto ? (
+                  <div className="relative shrink-0">
+                    <img
+                      src={selectedPlayer.foto}
+                      alt={selectedPlayer.nombre}
+                      className="w-14 h-14 rounded-2xl object-cover border-2 border-amber-500 shadow-md shadow-amber-500/20"
+                    />
+                    <span className="absolute -bottom-1 -right-1 px-1.5 py-0.2 bg-slate-950 text-amber-400 font-mono font-bold text-[10px] rounded border border-amber-500">
+                      #{selectedPlayer.dorsal}
+                    </span>
+                  </div>
+                ) : (
+                  <div className={`w-14 h-14 rounded-2xl border-2 flex items-center justify-center text-lg font-mono font-bold shrink-0 ${
+                    selectedPlayer.estadoCuota === 'pendiente' || selectedPlayer.estadoCuota === 'moroso'
+                      ? 'bg-rose-950 border-rose-500 text-rose-300'
+                      : 'bg-slate-800 border-amber-500 text-amber-400'
+                  }`}>
+                    #{selectedPlayer.dorsal}
+                  </div>
+                )}
                 <div>
                   <h3 className="text-xl font-bold text-white flex items-center gap-2">
                     {selectedPlayer.nombre} {selectedPlayer.apellidos}
@@ -676,7 +818,90 @@ export const PlayersView: React.FC<PlayersViewProps> = ({
                 <div className="bg-amber-950/20 border border-amber-900/40 rounded-xl p-3.5 flex items-center justify-between text-amber-200">
                   <div className="flex items-center gap-2">
                     <Edit3 className="w-4 h-4 text-amber-400 shrink-0" />
-                    <span>Modifique los datos personales, fecha de nacimiento, tutor responsable o ficha médica y pulse <strong>Guardar Cambios</strong>.</span>
+                    <span>Modifique la fotografía, datos personales, fecha de nacimiento, tutor responsable o ficha médica y pulse <strong>Guardar Cambios</strong>.</span>
+                  </div>
+                </div>
+
+                {/* EDICIÓN DE FOTOGRAFÍA DEL JUGADOR */}
+                <div className="p-4 bg-slate-950 border border-slate-800 rounded-xl space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="font-semibold text-white flex items-center gap-1.5 text-xs">
+                      <Camera className="w-4 h-4 text-amber-400" />
+                      Fotografía del Jugador (Actualizar Imagen)
+                    </span>
+                    {editPlayerForm.foto && (
+                      <button
+                        type="button"
+                        onClick={() => setEditPlayerForm({ ...editPlayerForm, foto: undefined })}
+                        className="text-[11px] text-rose-400 hover:text-rose-300 flex items-center gap-1"
+                      >
+                        <Trash2 className="w-3 h-3" /> Quitar foto
+                      </button>
+                    )}
+                  </div>
+
+                  <div className="flex flex-col sm:flex-row items-center gap-4">
+                    <div className="relative shrink-0">
+                      {editPlayerForm.foto ? (
+                        <img
+                          src={editPlayerForm.foto}
+                          alt="Foto del jugador"
+                          className="w-20 h-20 rounded-2xl object-cover border-2 border-amber-500 shadow-md shadow-amber-500/20"
+                        />
+                      ) : (
+                        <div className="w-20 h-20 rounded-2xl bg-slate-900 border-2 border-dashed border-slate-700 flex flex-col items-center justify-center text-slate-500 text-center p-2">
+                          <User className="w-7 h-7 text-slate-600 mb-1" />
+                          <span className="text-[9px]">Sin foto</span>
+                        </div>
+                      )}
+                      <span className="absolute -bottom-1 -right-1 px-1.5 py-0.2 bg-slate-950 text-amber-400 font-mono font-bold text-[10px] rounded border border-amber-500">
+                        #{editPlayerForm.dorsal}
+                      </span>
+                    </div>
+
+                    <div className="flex-1 space-y-2 w-full">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <label className="px-3 py-1.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold rounded-lg text-xs flex items-center gap-1.5 cursor-pointer transition-colors shadow-sm">
+                          <Upload className="w-3.5 h-3.5" />
+                          Subir nueva foto
+                          <input
+                            type="file"
+                            accept="image/*"
+                            className="hidden"
+                            onChange={(e) => handleImageFileUpload(e, true)}
+                          />
+                        </label>
+                        <span className="text-[11px] text-slate-400">Seleccionar desde tu dispositivo</span>
+                      </div>
+
+                      <div>
+                        <input
+                          type="url"
+                          placeholder="O pegue un enlace directo de foto (URL https://...)"
+                          value={editPlayerForm.foto || ''}
+                          onChange={(e) => setEditPlayerForm({ ...editPlayerForm, foto: e.target.value })}
+                          className="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-white text-xs placeholder-slate-500 font-mono"
+                        />
+                      </div>
+
+                      <div className="flex items-center gap-1.5 pt-1 overflow-x-auto scrollbar-none">
+                        <span className="text-[10px] text-slate-400 shrink-0">Fotos de muestra:</span>
+                        {PRESET_PLAYER_AVATARS.map((av) => (
+                          <button
+                            key={av.id}
+                            type="button"
+                            onClick={() => setEditPlayerForm({ ...editPlayerForm, foto: av.url })}
+                            className={`text-[10px] px-2 py-0.5 rounded-md border transition-colors shrink-0 ${
+                              editPlayerForm.foto === av.url
+                                ? 'bg-amber-500/20 text-amber-300 border-amber-500 font-bold'
+                                : 'bg-slate-900 text-slate-300 border-slate-800 hover:border-slate-700'
+                            }`}
+                          >
+                            {av.label}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
                   </div>
                 </div>
 
@@ -1063,6 +1288,61 @@ export const PlayersView: React.FC<PlayersViewProps> = ({
                         </button>
                       </div>
 
+                      {/* FOTOGRAFÍA OFICIAL & IDENTIFICACIÓN DEPORTIVA */}
+                      <div className="p-4 rounded-xl bg-slate-950 border border-slate-800 flex flex-col sm:flex-row items-center gap-4">
+                        <div className="relative shrink-0">
+                          {selectedPlayer.foto ? (
+                            <img
+                              src={selectedPlayer.foto}
+                              alt={selectedPlayer.nombre}
+                              className="w-24 h-24 rounded-2xl object-cover border-2 border-amber-500 shadow-xl shadow-amber-500/15"
+                            />
+                          ) : (
+                            <div className="w-24 h-24 rounded-2xl bg-slate-900 border-2 border-dashed border-slate-700 flex flex-col items-center justify-center text-slate-500 text-center p-2">
+                              <User className="w-8 h-8 text-slate-600 mb-1" />
+                              <span className="text-[10px]">Sin fotografía</span>
+                            </div>
+                          )}
+                          <span className="absolute -bottom-1 -right-1 px-2 py-0.5 bg-slate-950 text-amber-400 font-mono font-bold text-xs rounded-md border border-amber-500 shadow">
+                            #{selectedPlayer.dorsal}
+                          </span>
+                        </div>
+
+                        <div className="flex-1 text-center sm:text-left space-y-1">
+                          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                            <div>
+                              <h4 className="text-base font-extrabold text-white flex items-center justify-center sm:justify-start gap-2">
+                                {selectedPlayer.nombre} {selectedPlayer.apellidos}
+                                {selectedPlayer.foto && (
+                                  <span className="px-2 py-0.5 rounded text-[10px] bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 font-bold">
+                                    Foto Verificada
+                                  </span>
+                                )}
+                              </h4>
+                              <p className="text-xs text-amber-400 font-semibold">
+                                {selectedPlayer.posicion} · {selectedPlayer.equipoNombre}
+                              </p>
+                            </div>
+                            <button
+                              onClick={() => {
+                                setEditPlayerForm({
+                                  ...selectedPlayer,
+                                  tutorLegal: selectedPlayer.tutorLegal ? { ...selectedPlayer.tutorLegal } : undefined
+                                });
+                                setIsEditingPlayer(true);
+                              }}
+                              className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors border border-slate-700 self-center sm:self-auto cursor-pointer"
+                            >
+                              <Camera className="w-3.5 h-3.5 text-amber-400" />
+                              {selectedPlayer.foto ? 'Cambiar Fotografía' : 'Agregar Fotografía'}
+                            </button>
+                          </div>
+                          <p className="text-[11px] text-slate-400">
+                            Fotografía de registro en el carnet del club ACADEMIA F.S. para los partidos oficiales de la Asociación Departamental de Fútbol de Salón.
+                          </p>
+                        </div>
+                      </div>
+
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div className="p-4 rounded-xl bg-slate-950/60 border border-slate-800 space-y-2">
                           <div className="flex items-center justify-between">
@@ -1158,8 +1438,8 @@ export const PlayersView: React.FC<PlayersViewProps> = ({
                           <p className="text-[10px] text-slate-400 mt-1">Factor sanguíneo registrado</p>
                         </div>
 
-                        <div className="p-4 rounded-xl bg-slate-950 border border-sky-900/40 text-center">
-                          <div className="flex items-center justify-center gap-1.5 text-sky-400 mb-1">
+                        <div className="p-4 rounded-xl bg-slate-950 border border-amber-500/30 text-center">
+                          <div className="flex items-center justify-center gap-1.5 text-amber-400 mb-1">
                             <Scale className="w-4 h-4" />
                             <span className="font-semibold text-xs">Peso Corporal</span>
                           </div>
@@ -1263,13 +1543,13 @@ export const PlayersView: React.FC<PlayersViewProps> = ({
                         </div>
                         <div className="text-right text-slate-400">
                           <div>Asistencia: <span className="text-emerald-400 font-bold">{selectedPlayer.porcentajeAsistencia}%</span></div>
-                          <div>Puntualidad: <span className="text-sky-400 font-bold">{selectedPlayer.porcentajePuntualidad}%</span></div>
+                          <div>Puntualidad: <span className="text-amber-300 font-bold">{selectedPlayer.porcentajePuntualidad}%</span></div>
                         </div>
                       </div>
 
                       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                         <div className="p-4 rounded-xl bg-slate-950/40 border border-slate-800 space-y-2">
-                          <h5 className="font-bold text-sky-400 uppercase text-[11px]">1. Físico Futsal</h5>
+                          <h5 className="font-bold text-white uppercase text-[11px]">1. Físico Futsal</h5>
                           {[
                             { label: 'Velocidad', val: selectedPlayer.stats.velocidad },
                             { label: 'Resistencia', val: selectedPlayer.stats.resistencia },
@@ -1352,6 +1632,92 @@ export const PlayersView: React.FC<PlayersViewProps> = ({
                           </div>
                         </div>
                       </div>
+
+                      {/* WhatsApp Debt Reminder Panel for Overdue Players */}
+                      {(selectedPlayer.estadoCuota === 'pendiente' || selectedPlayer.estadoCuota === 'moroso') && (
+                        <div className="p-4 rounded-xl bg-emerald-950/25 border border-emerald-600/50 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                          <div className="space-y-0.5">
+                            <h5 className="font-bold text-white flex items-center gap-2 text-xs">
+                              <MessageCircle className="w-4 h-4 text-emerald-400" />
+                              Recordatorio de Pago por WhatsApp (Mensualidad Pendiente)
+                            </h5>
+                            <p className="text-[11px] text-slate-300">
+                              Envíe un mensaje pre-llenado recordando su cuota pendiente de <strong className="text-rose-300 font-mono">Bs {selectedPlayer.cuotaMensualMonto}</strong>.
+                            </p>
+                          </div>
+
+                          <div className="flex flex-wrap items-center gap-2 shrink-0">
+                            {(() => {
+                              const playerMsg = whatsappService.buildPlayerMessage(selectedPlayer, 'jugador', currentMonth);
+                              const playerWaUrl = whatsappService.buildWhatsAppUrl(selectedPlayer.telefono || '', playerMsg);
+                              return (
+                                <a
+                                  href={playerWaUrl}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  onClick={() =>
+                                    whatsappService.logDispatch({
+                                      entityId: selectedPlayer.id,
+                                      entityType: 'player',
+                                      entityName: `${selectedPlayer.nombre} ${selectedPlayer.apellidos}`,
+                                      recipientName: `${selectedPlayer.nombre} ${selectedPlayer.apellidos}`,
+                                      targetType: 'jugador',
+                                      phone: selectedPlayer.telefono || 'WhatsApp',
+                                      amountBs: selectedPlayer.cuotaMensualMonto,
+                                      period: currentMonth
+                                    })
+                                  }
+                                  className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-lg text-xs inline-flex items-center gap-1.5 shadow-sm transition-colors"
+                                >
+                                  <MessageCircle className="w-3.5 h-3.5" />
+                                  Enviar al Jugador
+                                  <ExternalLink className="w-3 h-3" />
+                                </a>
+                              );
+                            })()}
+
+                            {selectedPlayer.tutorLegal?.telefono && (() => {
+                              const tutorMsg = whatsappService.buildPlayerMessage(selectedPlayer, 'tutor', currentMonth);
+                              const tutorWaUrl = whatsappService.buildWhatsAppUrl(selectedPlayer.tutorLegal!.telefono, tutorMsg);
+                              return (
+                                <a
+                                  href={tutorWaUrl}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  onClick={() =>
+                                    whatsappService.logDispatch({
+                                      entityId: selectedPlayer.id,
+                                      entityType: 'player',
+                                      entityName: `${selectedPlayer.nombre} ${selectedPlayer.apellidos}`,
+                                      recipientName: `${selectedPlayer.tutorLegal!.nombre} (Tutor)`,
+                                      targetType: 'tutor',
+                                      phone: selectedPlayer.tutorLegal!.telefono,
+                                      amountBs: selectedPlayer.cuotaMensualMonto,
+                                      period: currentMonth
+                                    })
+                                  }
+                                  className="px-3 py-1.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold rounded-lg text-xs inline-flex items-center gap-1.5 shadow-sm transition-colors"
+                                >
+                                  <MessageCircle className="w-3.5 h-3.5" />
+                                  Enviar al Tutor Legal
+                                  <ExternalLink className="w-3 h-3" />
+                                </a>
+                              );
+                            })()}
+
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setWhatsAppInitialPlayer(selectedPlayer);
+                                setIsWhatsAppModalOpen(true);
+                              }}
+                              className="px-2.5 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 rounded-lg text-xs font-semibold"
+                            >
+                              Editar Mensaje
+                            </button>
+                          </div>
+                        </div>
+                      )}
 
                       {/* Payment form in Bolivianos */}
                       <div className="p-4 rounded-xl bg-slate-950 border border-slate-800 space-y-3">
@@ -1438,8 +1804,8 @@ export const PlayersView: React.FC<PlayersViewProps> = ({
                                   <div className="text-[11px] text-slate-400 flex items-center gap-1.5">
                                     <span>Fecha de pago:</span>
                                     <strong className="text-amber-300 font-mono">Día {dia}</strong> ·
-                                    <strong className="text-sky-300 font-mono">{mes}</strong> ·
-                                    <strong className="text-emerald-300 font-mono">{anio}</strong>
+                                    <strong className="text-white font-mono">{mes}</strong> ·
+                                    <strong className="text-amber-400 font-mono">{anio}</strong>
                                     <span className="text-slate-500">({pay.metodo})</span>
                                   </div>
                                 </div>
@@ -1571,6 +1937,92 @@ export const PlayersView: React.FC<PlayersViewProps> = ({
             </div>
 
             <form onSubmit={handleCreatePlayerSubmit} className="p-6 space-y-4 text-xs">
+              {/* SECCIÓN: FOTOGRAFÍA DEL JUGADOR */}
+              <div className="p-4 bg-slate-950 border border-slate-800 rounded-xl space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="font-semibold text-white flex items-center gap-1.5 text-xs">
+                    <Camera className="w-4 h-4 text-amber-400" />
+                    Fotografía del Jugador (Ficha Oficial)
+                  </span>
+                  {newPlayerForm.foto && (
+                    <button
+                      type="button"
+                      onClick={() => setNewPlayerForm({ ...newPlayerForm, foto: '' })}
+                      className="text-[11px] text-rose-400 hover:text-rose-300 flex items-center gap-1"
+                    >
+                      <Trash2 className="w-3 h-3" /> Quitar foto
+                    </button>
+                  )}
+                </div>
+
+                <div className="flex flex-col sm:flex-row items-center gap-4">
+                  {/* Photo Preview */}
+                  <div className="relative shrink-0">
+                    {newPlayerForm.foto ? (
+                      <img
+                        src={newPlayerForm.foto}
+                        alt="Previsualización de foto"
+                        className="w-20 h-20 rounded-2xl object-cover border-2 border-amber-500 shadow-md shadow-amber-500/20"
+                      />
+                    ) : (
+                      <div className="w-20 h-20 rounded-2xl bg-slate-900 border-2 border-dashed border-slate-700 flex flex-col items-center justify-center text-slate-500 text-center p-2">
+                        <User className="w-7 h-7 text-slate-600 mb-1" />
+                        <span className="text-[9px]">Sin foto</span>
+                      </div>
+                    )}
+                    <span className="absolute -bottom-1 -right-1 px-1.5 py-0.2 bg-slate-950 text-amber-400 font-mono font-bold text-[10px] rounded border border-amber-500">
+                      #{newPlayerForm.dorsal || 10}
+                    </span>
+                  </div>
+
+                  {/* Upload and URL controls */}
+                  <div className="flex-1 space-y-2 w-full">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <label className="px-3 py-1.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold rounded-lg text-xs flex items-center gap-1.5 cursor-pointer transition-colors shadow-sm">
+                        <Upload className="w-3.5 h-3.5" />
+                        Subir desde equipo
+                        <input
+                          type="file"
+                          accept="image/*"
+                          className="hidden"
+                          onChange={(e) => handleImageFileUpload(e, false)}
+                        />
+                      </label>
+                      <span className="text-[11px] text-slate-400">JPG, PNG o WebP desde tu celular o computadora</span>
+                    </div>
+
+                    <div>
+                      <input
+                        type="url"
+                        placeholder="O pegue un enlace directo de foto (URL https://...)"
+                        value={newPlayerForm.foto}
+                        onChange={(e) => setNewPlayerForm({ ...newPlayerForm, foto: e.target.value })}
+                        className="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-white text-xs placeholder-slate-500 font-mono"
+                      />
+                    </div>
+
+                    {/* Quick Avatar Presets */}
+                    <div className="flex items-center gap-1.5 pt-1 overflow-x-auto scrollbar-none">
+                      <span className="text-[10px] text-slate-400 shrink-0">Muestras:</span>
+                      {PRESET_PLAYER_AVATARS.map((av) => (
+                        <button
+                          key={av.id}
+                          type="button"
+                          onClick={() => setNewPlayerForm({ ...newPlayerForm, foto: av.url })}
+                          className={`text-[10px] px-2 py-0.5 rounded-md border transition-colors shrink-0 ${
+                            newPlayerForm.foto === av.url
+                              ? 'bg-amber-500/20 text-amber-300 border-amber-500 font-bold'
+                              : 'bg-slate-900 text-slate-300 border-slate-800 hover:border-slate-700'
+                          }`}
+                        >
+                          {av.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-slate-400 mb-1 font-semibold">Nombre:</label>
@@ -1841,6 +2293,15 @@ export const PlayersView: React.FC<PlayersViewProps> = ({
           </div>
         </div>
       )}
+
+      {/* WHATSAPP REMINDER & LINKING MODAL */}
+      <WhatsAppReminderModal
+        isOpen={isWhatsAppModalOpen}
+        onClose={() => setIsWhatsAppModalOpen(false)}
+        overduePlayers={pendingPlayers}
+        initialPlayer={whatsAppInitialPlayer}
+        period={currentMonth}
+      />
     </div>
   );
 };

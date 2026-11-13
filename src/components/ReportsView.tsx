@@ -157,12 +157,14 @@ export const ReportsView: React.FC<ReportsViewProps> = ({
         {/* Official Header with Club Crest & Institutional Seals */}
         <div className="flex items-start justify-between border-b-2 border-amber-500/80 pb-5 print:border-black">
           <div className="flex items-center gap-4">
-            <img
-              src={CLUB_INFO.crestUrl}
-              alt="Escudo"
-              className="w-16 h-16 rounded-full border-2 border-amber-500 object-cover print:w-14 print:h-14"
-              referrerPolicy="no-referrer"
-            />
+            <div className="w-20 h-20 rounded-xl bg-[#050507] border-2 border-amber-500 p-1 flex items-center justify-center shrink-0 print:w-16 print:h-16 print:bg-black">
+              <img
+                src={CLUB_INFO.crestUrl}
+                alt="Escudo"
+                className="w-full h-full object-contain rounded-lg"
+                referrerPolicy="no-referrer"
+              />
+            </div>
             <div>
               <h1 className="text-2xl font-black tracking-tight text-white print:text-black">
                 {CLUB_INFO.nombre}
@@ -332,7 +334,7 @@ export const ReportsView: React.FC<ReportsViewProps> = ({
               </div>
               <div className="p-4 rounded-xl bg-slate-950 border border-slate-800 print:bg-gray-100 print:border-gray-300 text-center">
                 <span className="text-xs text-slate-400 print:text-gray-600">Tasa de Cobranza</span>
-                <div className="text-2xl font-bold text-sky-400 print:text-black font-mono mt-1">
+                <div className="text-2xl font-bold text-amber-400 print:text-black font-mono mt-1">
                   {financialSummary.tasaCobranzaPorcentaje}%
                 </div>
               </div>
@@ -421,7 +423,7 @@ export const ReportsView: React.FC<ReportsViewProps> = ({
                       <td className="p-2.5 text-center font-mono font-bold text-emerald-400 print:text-black">
                         {p.porcentajeAsistencia}%
                       </td>
-                      <td className="p-2.5 text-center font-mono font-bold text-sky-400 print:text-black">
+                      <td className="p-2.5 text-center font-mono font-bold text-amber-300 print:text-black">
                         {p.porcentajePuntualidad}%
                       </td>
                     </tr>
@@ -489,7 +491,7 @@ export const ReportsView: React.FC<ReportsViewProps> = ({
           <div className="space-y-6">
             <div>
               <h3 className="text-lg font-bold text-white print:text-black flex items-center gap-2">
-                <TrendingUp className="w-5 h-5 text-sky-400 print:text-black" />
+                <TrendingUp className="w-5 h-5 text-amber-400 print:text-black" />
                 Matriz de Rendimiento Técnico, Físico, Táctico y Sanciones
               </h3>
               <p className="text-xs text-slate-400 print:text-gray-600">
@@ -522,7 +524,7 @@ export const ReportsView: React.FC<ReportsViewProps> = ({
                         #{p.dorsal} {p.nombre} {p.apellidos}
                       </td>
                       <td className="p-2.5 text-slate-300 print:text-black">{p.posicion}</td>
-                      <td className="p-2.5 text-center font-mono text-sky-400 print:text-black">{fis}</td>
+                      <td className="p-2.5 text-center font-mono text-white print:text-black">{fis}</td>
                       <td className="p-2.5 text-center font-mono text-emerald-400 print:text-black">{tec}</td>
                       <td className="p-2.5 text-center font-mono text-amber-400 print:text-black">{tac}</td>
                       <td className="p-2.5 text-center font-mono font-bold text-amber-400 print:text-black">

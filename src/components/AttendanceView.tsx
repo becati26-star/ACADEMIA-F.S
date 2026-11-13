@@ -275,7 +275,7 @@ export const AttendanceView: React.FC<AttendanceViewProps> = ({
               </div>
               <div className="border-l border-slate-800 pl-4">
                 <span className="text-slate-400 block">% Asistencia Sesión:</span>
-                <span className="text-lg font-bold text-sky-400 font-mono tabular-nums">{sessionAttendanceRate}%</span>
+                <span className="text-lg font-bold text-white font-mono tabular-nums">{sessionAttendanceRate}%</span>
               </div>
               <div className="border-l border-slate-800 pl-4">
                 <span className="text-slate-400 block">% Puntualidad:</span>
@@ -371,7 +371,7 @@ export const AttendanceView: React.FC<AttendanceViewProps> = ({
                           onClick={() => setPlayerStatus(player.id, 'justificado')}
                           className={`px-3 py-1.5 rounded-lg text-xs font-medium flex items-center gap-1 transition-colors ${
                             state.estado === 'justificado'
-                              ? 'bg-sky-600 text-white font-bold shadow-sm'
+                              ? 'bg-white text-slate-950 font-bold shadow-sm'
                               : 'bg-slate-950 text-slate-400 hover:text-white border border-slate-800'
                           }`}
                         >
@@ -489,7 +489,7 @@ export const AttendanceView: React.FC<AttendanceViewProps> = ({
                                   : d.estado === 'tarde'
                                   ? 'bg-amber-950/40 text-amber-300 border-amber-900/60'
                                   : d.estado === 'justificado'
-                                  ? 'bg-sky-950/40 text-sky-300 border-sky-900/60'
+                                  ? 'bg-white/10 text-white border-white/30'
                                   : 'bg-rose-950/40 text-rose-300 border-rose-900/60'
                               }`}
                             >

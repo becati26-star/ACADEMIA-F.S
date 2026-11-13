@@ -300,7 +300,7 @@ export const SecurityAndNeonView: React.FC<SecurityAndNeonViewProps> = ({
           {/* ISO 42010 Quality */}
           <div className="p-5 rounded-xl bg-slate-900 border border-slate-800 space-y-3">
             <h4 className="font-bold text-white text-sm flex items-center gap-2">
-              <Cpu className="w-4 h-4 text-sky-400" />
+              <Cpu className="w-4 h-4 text-amber-400" />
               Calidad de Software ISO/IEC/IEEE 42010
             </h4>
             <ul className="space-y-2 text-slate-300">

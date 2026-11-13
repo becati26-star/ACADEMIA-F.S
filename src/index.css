@@ -2,9 +2,39 @@
 
 @custom-variant dark (&:where(.dark, .dark *));
 
+@theme {
+  /* Official ACADEMIA F.S. Crest Palette: Pitch Black, Onyx Charcoal & Warm Neutrals */
+  --color-slate-50: #FAFAFA;
+  --color-slate-100: #F4F3EF;
+  --color-slate-200: #E6E4DD;
+  --color-slate-300: #CECBC2;
+  --color-slate-400: #A19D93;
+  --color-slate-500: #757168;
+  --color-slate-600: #524E45;
+  --color-slate-700: #33302A;
+  --color-slate-800: #201F23;
+  --color-slate-900: #111115;
+  --color-slate-950: #060608;
+
+  /* Official ACADEMIA F.S. Crest Palette: Metallic Championship Gold */
+  --color-amber-50: #FEFBF0;
+  --color-amber-100: #FCF3D2;
+  --color-amber-200: #F5E2A0;
+  --color-amber-300: #EDD074;
+  --color-amber-400: #E5C158;
+  --color-amber-500: #D4AF37;
+  --color-amber-600: #B58E21;
+  --color-amber-700: #8C6B14;
+  --color-amber-800: #59430B;
+  --color-amber-900: #332506;
+  --color-amber-950: #1A1303;
+}
+
 @layer base {
   body {
     font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+    background-color: #060608;
+    color: #F4F3EF;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
   }
@@ -13,6 +43,22 @@
     font-family: 'JetBrains Mono', monospace;
     font-variant-numeric: tabular-nums;
   }
+}
+
+/* Custom sleek gold-accent scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #060608;
+}
+::-webkit-scrollbar-thumb {
+  background: #33302A;
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #D4AF37;
 }
 
 @media print {

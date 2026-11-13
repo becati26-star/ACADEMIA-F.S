@@ -6,6 +6,7 @@
 import React from 'react';
 import { Player, Socio, MatchRoster, FinancialSummary, AttendanceRecord } from '../types';
 import { CLUB_INFO } from '../data/mockData';
+import { PresidentNotifications } from './PresidentNotifications';
 import {
   Users,
   Award,
@@ -60,21 +61,31 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   return (
     <div className="space-y-6">
       {/* Top Welcome / Club Identity Strip */}
-      <div className="bg-slate-900 border border-slate-800 rounded-xl p-5 shadow-sm text-slate-100 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-        <div className="space-y-1">
-          <div className="flex items-center gap-2">
-            <span className="text-xs uppercase tracking-wider font-semibold text-amber-400">
-              Panel de Control Deportivo &amp; Institucional
-            </span>
-            <span className="text-slate-500">·</span>
-            <span className="text-xs text-slate-400">Temporada Oficial 2026</span>
+      <div className="bg-slate-900 border border-amber-500/30 rounded-xl p-5 shadow-sm text-slate-100 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+        <div className="flex items-center gap-4">
+          <div className="w-16 h-16 rounded-xl bg-[#050507] border border-amber-500/60 p-1 flex items-center justify-center shadow-[0_0_20px_rgba(212,175,55,0.18)] shrink-0">
+            <img
+              src={CLUB_INFO.crestUrl}
+              alt="Escudo Oficial ACADEMIA F.S."
+              className="w-full h-full object-contain rounded-lg"
+              referrerPolicy="no-referrer"
+            />
           </div>
-          <h1 className="text-2xl font-bold tracking-tight text-white">
-            {CLUB_INFO.nombre}
-          </h1>
-          <p className="text-xs text-slate-400">
-            {CLUB_INFO.lema} · {CLUB_INFO.sede} · Afiliación Oficial {CLUB_INFO.afiliacion}
-          </p>
+          <div className="space-y-1">
+            <div className="flex items-center gap-2">
+              <span className="text-xs uppercase tracking-wider font-semibold text-amber-400">
+                Panel de Control Deportivo &amp; Institucional
+              </span>
+              <span className="text-slate-500">·</span>
+              <span className="text-xs text-slate-400">Temporada Oficial 2026</span>
+            </div>
+            <h1 className="text-2xl font-bold tracking-tight text-white">
+              {CLUB_INFO.nombre}
+            </h1>
+            <p className="text-xs text-slate-400">
+              {CLUB_INFO.lema} · {CLUB_INFO.sede} · Afiliación Oficial {CLUB_INFO.afiliacion}
+            </p>
+          </div>
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
@@ -102,22 +113,30 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         </div>
       </div>
 
+      {/* AUTOMATIC VISUAL NOTIFICATIONS COMPONENT FOR PRESIDENT & DIRECTIVA */}
+      <PresidentNotifications
+        players={players}
+        socios={socios}
+        onNavigateToTab={onNavigate}
+        onOpenPlayerModal={onSelectPlayer}
+      />
+
       {/* 4 Primary KPI Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {/* Card 1: Jugadores */}
         <div
           onClick={() => onNavigate('players')}
-          className="bg-slate-900/90 border border-slate-800 rounded-xl p-4 hover:border-slate-700 transition-all cursor-pointer group"
+          className="bg-slate-900/90 border border-slate-700 rounded-xl p-4 hover:border-amber-500/60 transition-all cursor-pointer group"
         >
           <div className="flex items-center justify-between text-xs text-slate-400 mb-2">
             <span>Plantel de Jugadores</span>
-            <Users className="w-4 h-4 text-sky-400" />
+            <Users className="w-4 h-4 text-amber-400" />
           </div>
           <div className="text-2xl font-bold text-white tabular-nums">
             {totalPlayers}
           </div>
           <div className="mt-2 text-xs text-slate-400 flex items-center justify-between">
-            <span>4 Categorías activas</span>
+            <span>3 Categorías activas</span>
             <span className="text-emerald-400 flex items-center font-medium">
               100% Federados
             </span>
@@ -127,7 +146,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         {/* Card 2: Socios & Cobranza */}
         <div
           onClick={() => onNavigate('socios')}
-          className="bg-slate-900/90 border border-slate-800 rounded-xl p-4 hover:border-slate-700 transition-all cursor-pointer group"
+          className="bg-slate-900/90 border border-slate-700 rounded-xl p-4 hover:border-amber-500/60 transition-all cursor-pointer group"
         >
           <div className="flex items-center justify-between text-xs text-slate-400 mb-2">
             <span>Padrón de Socios</span>
@@ -147,7 +166,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         {/* Card 3: Asistencia a Entrenamientos */}
         <div
           onClick={() => onNavigate('attendance')}
-          className="bg-slate-900/90 border border-slate-800 rounded-xl p-4 hover:border-slate-700 transition-all cursor-pointer group"
+          className="bg-slate-900/90 border border-slate-700 rounded-xl p-4 hover:border-amber-500/60 transition-all cursor-pointer group"
         >
           <div className="flex items-center justify-between text-xs text-slate-400 mb-2">
             <span>Asistencia Promedio</span>
@@ -158,7 +177,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           </div>
           <div className="mt-2 text-xs text-slate-400 flex items-center justify-between">
             <span>Puntualidad en cancha</span>
-            <span className="text-sky-400 font-medium tabular-nums">
+            <span className="text-amber-300 font-medium tabular-nums">
               {avgPunctuality}%
             </span>
           </div>

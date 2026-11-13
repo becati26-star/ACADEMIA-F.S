@@ -22,8 +22,8 @@ export const CLUB_INFO = {
   presidente: "Lic. Carlos Mendoza Rivas",
   directoraFinanciera: "Lic. Valeria Santillán",
   directorTecnicoPrincipal: "Prof. Diego Alejandro Vera",
-  crestUrl: "/src/assets/images/club_crest_badge_1794401178587.jpg",
-  pitchUrl: "/src/assets/images/tactical_match_stadium_1794401178464.jpg"
+  crestUrl: "/assets/aistudio/WhatsApp_Image_2026-11-13_at_09.06.09_02786f7e.jpeg",
+  pitchUrl: "/assets/aistudio/WhatsApp_Image_2026-11-13_at_09.06.09_02786f7e.jpeg"
 };
 
 export const INITIAL_ROLES: UserRole[] = [
@@ -47,7 +47,7 @@ export const INITIAL_ROLES: UserRole[] = [
     email: 'presidente@academiafs.bo',
     password: 'Presidencia2026$',
     permissions: ['members:write', 'finance:write', 'audit:read', 'reports:executive'],
-    allowedTabs: ['players', 'mensualidades', 'socios', 'treasury', 'reports']
+    allowedTabs: ['dashboard', 'players', 'mensualidades', 'socios', 'treasury', 'reports']
   },
   {
     id: 'user-admin',
@@ -120,6 +120,7 @@ export const INITIAL_PLAYERS: Player[] = [
     fechaNacimiento: '2008-04-12',
     telefono: '+591 765-89100',
     email: 'mateo.garcia@email.com',
+    foto: 'https://images.unsplash.com/photo-1543326727-cf6c39e8f84c?w=300&auto=format&fit=crop&q=80',
     posicion: 'Ala Izquierda',
     posicionSecundaria: 'Universal',
     piernaHabil: 'Izquierda',
@@ -211,6 +212,7 @@ export const INITIAL_PLAYERS: Player[] = [
     fechaNacimiento: '2008-09-14',
     telefono: '+591 712-33440',
     email: 'jhoel.mendoza@email.com',
+    foto: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=300&auto=format&fit=crop&q=80',
     posicion: 'Arquero',
     piernaHabil: 'Derecha',
     categoriaId: 'sub-18',
@@ -286,6 +288,7 @@ export const INITIAL_PLAYERS: Player[] = [
     fechaNacimiento: '2008-02-05',
     telefono: '+591 799-88120',
     email: 'rodrigo.mamani@email.com',
+    foto: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=300&auto=format&fit=crop&q=80',
     posicion: 'Cierre',
     piernaHabil: 'Derecha',
     categoriaId: 'sub-18',

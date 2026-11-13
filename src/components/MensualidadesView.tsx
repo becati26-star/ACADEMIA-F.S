@@ -3,8 +3,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Player, Category, PaymentRecord } from '../types';
+import { whatsappService, WhatsAppReminderLog } from '../services/whatsappService';
+import { WhatsAppReminderModal } from './WhatsAppReminderModal';
 import {
   Calendar,
   CreditCard,
@@ -22,7 +24,9 @@ import {
   ArrowUpDown,
   History,
   TrendingUp,
-  FileSpreadsheet
+  FileSpreadsheet,
+  MessageCircle,
+  Check
 } from 'lucide-react';
 
 interface MensualidadesViewProps {
@@ -53,6 +57,19 @@ export const MensualidadesView: React.FC<MensualidadesViewProps> = ({
 
   // Modal State for player payment history
   const [historyPlayer, setHistoryPlayer] = useState<Player | null>(null);
+
+  // WhatsApp Integration State
+  const [isWhatsAppModalOpen, setIsWhatsAppModalOpen] = useState(false);
+  const [whatsAppInitialPlayer, setWhatsAppInitialPlayer] = useState<Player | null>(null);
+  const [whatsAppLogs, setWhatsAppLogs] = useState<WhatsAppReminderLog[]>(() => whatsappService.getLogs());
+  const [toastSuccess, setToastSuccess] = useState<string | null>(null);
+
+  useEffect(() => {
+    const unsub = whatsappService.subscribe(() => {
+      setWhatsAppLogs(whatsappService.getLogs());
+    });
+    return unsub;
+  }, []);
 
   // Helper to parse Day, Month name and Year from YYYY-MM-DD
   const parsePaymentDateDetails = (dateStr: string) => {
@@ -153,17 +170,10 @@ export const MensualidadesView: React.FC<MensualidadesViewProps> = ({
     );
 
     const dateDetails = parsePaymentDateDetails(payDate);
-    alert(
-      `¡Pago de mensualidad registrado con éxito!\n\n` +
-      `Jugador: ${selectedPlayerForPay.nombre} ${selectedPlayerForPay.apellidos}\n` +
-      `Monto: Bs ${payAmount}\n` +
-      `Periodo: ${payPeriodMonth}\n` +
-      `Fecha de pago registrada:\n` +
-      `• Día: ${dateDetails.dia}\n` +
-      `• Mes: ${dateDetails.mes}\n` +
-      `• Año: ${dateDetails.anio}\n\n` +
-      `Estado actualizado a: AL DÍA`
+    setToastSuccess(
+      `Pago registrado para ${selectedPlayerForPay.nombre} ${selectedPlayerForPay.apellidos}: Bs ${payAmount} (${dateDetails.dia} de ${dateDetails.mes} de ${dateDetails.anio}).`
     );
+    setTimeout(() => setToastSuccess(null), 5000);
 
     setIsRegisteringPayment(false);
   };
@@ -243,6 +253,16 @@ export const MensualidadesView: React.FC<MensualidadesViewProps> = ({
 
         <div className="flex flex-wrap items-center gap-2.5">
           <button
+            onClick={() => {
+              setWhatsAppInitialPlayer(null);
+              setIsWhatsAppModalOpen(true);
+            }}
+            className="px-3.5 py-2 bg-emerald-950/70 hover:bg-emerald-900/80 text-emerald-300 border border-emerald-500/50 text-xs font-bold rounded-xl flex items-center gap-1.5 transition-colors cursor-pointer"
+          >
+            <MessageCircle className="w-4 h-4 text-emerald-400" />
+            Recordatorios WhatsApp ({playersPendientes.length})
+          </button>
+          <button
             onClick={exportPaymentsToCSV}
             className="px-3.5 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 text-xs font-semibold rounded-xl flex items-center gap-1.5 transition-colors"
           >
@@ -262,6 +282,18 @@ export const MensualidadesView: React.FC<MensualidadesViewProps> = ({
           </button>
         </div>
       </div>
+
+      {toastSuccess && (
+        <div className="p-3.5 rounded-xl bg-emerald-950/80 border border-emerald-600 text-emerald-200 text-xs font-semibold flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2">
+            <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+            <span>{toastSuccess}</span>
+          </div>
+          <button onClick={() => setToastSuccess(null)} className="text-emerald-300 hover:text-white">
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+      )}
 
       {/* KPI Cards Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -339,16 +371,29 @@ export const MensualidadesView: React.FC<MensualidadesViewProps> = ({
             </div>
           </div>
 
-          <button
-            onClick={() => setFilterStatus(filterStatus === 'pendiente' ? 'all' : 'pendiente')}
-            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-colors shrink-0 ${
-              filterStatus === 'pendiente'
-                ? 'bg-rose-600 text-white'
-                : 'bg-rose-900/80 hover:bg-rose-800 text-rose-200 border border-rose-700'
-            }`}
-          >
-            {filterStatus === 'pendiente' ? 'Ver Todos los Jugadores' : 'Filtrar Solo Pendientes'}
-          </button>
+          <div className="flex flex-wrap items-center gap-2 shrink-0">
+            <button
+              onClick={() => {
+                setWhatsAppInitialPlayer(null);
+                setIsWhatsAppModalOpen(true);
+              }}
+              className="px-3 py-1.5 rounded-lg text-xs font-bold bg-emerald-600 hover:bg-emerald-500 text-white flex items-center gap-1.5 shadow-sm transition-colors cursor-pointer"
+            >
+              <MessageCircle className="w-3.5 h-3.5" />
+              Enviar Recordatorios WhatsApp
+            </button>
+
+            <button
+              onClick={() => setFilterStatus(filterStatus === 'pendiente' ? 'all' : 'pendiente')}
+              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-colors shrink-0 ${
+                filterStatus === 'pendiente'
+                  ? 'bg-rose-600 text-white'
+                  : 'bg-rose-900/80 hover:bg-rose-800 text-rose-200 border border-rose-700'
+              }`}
+            >
+              {filterStatus === 'pendiente' ? 'Ver Todos los Jugadores' : 'Filtrar Solo Pendientes'}
+            </button>
+          </div>
         </div>
       )}
 
@@ -441,15 +486,23 @@ export const MensualidadesView: React.FC<MensualidadesViewProps> = ({
                     <tr
                       key={player.id}
                       className={`hover:bg-slate-800/40 transition-colors ${
-                        isPending ? 'bg-rose-950/20 border-l-4 border-l-rose-500' : ''
+                        isPending ? 'bg-rose-950/25' : ''
                       }`}
                     >
                       {/* Player Info */}
                       <td className="py-3 px-4">
                         <div className="flex items-center gap-2.5">
-                          <div className="w-8 h-8 rounded-full bg-slate-800 border border-slate-700 flex items-center justify-center font-bold text-xs text-amber-400 shrink-0 font-mono">
-                            #{player.dorsal}
-                          </div>
+                          {player.foto ? (
+                            <img
+                              src={player.foto}
+                              alt={player.nombre}
+                              className="w-8 h-8 rounded-full object-cover border border-amber-500/60 shrink-0 shadow-sm"
+                            />
+                          ) : (
+                            <div className="w-8 h-8 rounded-full bg-slate-800 border border-slate-700 flex items-center justify-center font-bold text-xs text-amber-400 shrink-0 font-mono">
+                              #{player.dorsal}
+                            </div>
+                          )}
                           <div>
                             <span className="font-bold text-white block">
                               {player.nombre} {player.apellidos}
@@ -468,7 +521,7 @@ export const MensualidadesView: React.FC<MensualidadesViewProps> = ({
                             player.categoriaId === 'primera-c'
                               ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40'
                               : player.categoriaId === 'sub-20'
-                              ? 'bg-sky-500/20 text-sky-300 border border-sky-500/40'
+                              ? 'bg-white/10 text-white border border-white/25'
                               : 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40'
                           }`}>
                             {player.equipoNombre}
@@ -521,10 +574,10 @@ export const MensualidadesView: React.FC<MensualidadesViewProps> = ({
                               <span className="px-1.5 py-0.5 rounded bg-slate-950 border border-slate-700 text-[10px] text-amber-300 font-mono font-bold">
                                 Día: <strong>{dateInfo.dia}</strong>
                               </span>
-                              <span className="px-1.5 py-0.5 rounded bg-slate-950 border border-slate-700 text-[10px] text-sky-300 font-mono font-bold">
+                              <span className="px-1.5 py-0.5 rounded bg-slate-950 border border-slate-700 text-[10px] text-white font-mono font-bold">
                                 Mes: <strong>{dateInfo.mes}</strong>
                               </span>
-                              <span className="px-1.5 py-0.5 rounded bg-slate-950 border border-slate-700 text-[10px] text-emerald-300 font-mono font-bold">
+                              <span className="px-1.5 py-0.5 rounded bg-slate-950 border border-slate-700 text-[10px] text-amber-400 font-mono font-bold">
                                 Año: <strong>{dateInfo.anio}</strong>
                               </span>
                             </div>
@@ -555,9 +608,64 @@ export const MensualidadesView: React.FC<MensualidadesViewProps> = ({
                       {/* Acciones */}
                       <td className="py-3 px-4 text-right">
                         <div className="flex items-center justify-end gap-1.5">
+                          {isPending && (() => {
+                            const primary = whatsappService.getPrimaryPlayerTarget(player);
+                            const msg = whatsappService.buildPlayerMessage(
+                              player,
+                              primary?.targetType || 'jugador',
+                              'Noviembre 2026'
+                            );
+                            const waUrl = whatsappService.buildWhatsAppUrl(
+                              primary?.phone || player.telefono || '',
+                              msg
+                            );
+                            const alreadySent = whatsAppLogs.some((l) => l.entityId === player.id);
+
+                            return (
+                              <>
+                                <a
+                                  href={waUrl}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  onClick={() => {
+                                    whatsappService.logDispatch({
+                                      entityId: player.id,
+                                      entityType: 'player',
+                                      entityName: `${player.nombre} ${player.apellidos}`,
+                                      recipientName: primary?.recipientName || `${player.nombre} ${player.apellidos}`,
+                                      targetType: primary?.targetType || 'jugador',
+                                      phone: primary?.phone || player.telefono || 'WhatsApp',
+                                      amountBs: player.cuotaMensualMonto,
+                                      period: 'Noviembre 2026'
+                                    });
+                                  }}
+                                  title={`Enviar recordatorio de pago por WhatsApp a ${primary?.recipientName || player.nombre}`}
+                                  className={`px-2 py-1 rounded text-[11px] font-bold flex items-center gap-1 transition-colors ${
+                                    alreadySent
+                                      ? 'bg-emerald-950/80 text-emerald-300 border border-emerald-600/60 hover:bg-emerald-900'
+                                      : 'bg-emerald-600 hover:bg-emerald-500 text-white'
+                                  }`}
+                                >
+                                  <MessageCircle className="w-3 h-3" />
+                                  <span>{alreadySent ? 'WA Enviado' : 'WhatsApp'}</span>
+                                </a>
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setWhatsAppInitialPlayer(player);
+                                    setIsWhatsAppModalOpen(true);
+                                  }}
+                                  title="Personalizar mensaje o elegir tutor en WhatsApp"
+                                  className="px-1.5 py-1 bg-slate-800 hover:bg-slate-700 text-emerald-400 border border-slate-700 rounded text-[10px] font-bold"
+                                >
+                                  Editar WA
+                                </button>
+                              </>
+                            );
+                          })()}
                           <button
                             onClick={() => handleOpenRegisterPayment(player)}
-                            className="px-2.5 py-1 bg-emerald-600/90 hover:bg-emerald-500 text-white rounded text-[11px] font-bold transition-colors cursor-pointer"
+                            className="px-2.5 py-1 bg-amber-500 hover:bg-amber-400 text-slate-950 rounded text-[11px] font-bold transition-colors cursor-pointer"
                           >
                             Cobrar
                           </button>
@@ -679,7 +787,7 @@ export const MensualidadesView: React.FC<MensualidadesViewProps> = ({
                   <div className="h-6 w-px bg-slate-800" />
                   <div>
                     <span className="text-[10px] text-slate-400 block uppercase">Mes:</span>
-                    <span className="text-base font-extrabold text-sky-400 font-mono">
+                    <span className="text-base font-extrabold text-white font-mono">
                       {currentFormDateDetails.mes}
                     </span>
                   </div>
@@ -773,8 +881,8 @@ export const MensualidadesView: React.FC<MensualidadesViewProps> = ({
                           <div className="flex items-center gap-1.5 text-[11px] text-slate-400">
                             <span>Fecha de pago:</span>
                             <strong className="text-amber-300">Día {d.dia}</strong> ·
-                            <strong className="text-sky-300">{d.mes}</strong> ·
-                            <strong className="text-emerald-300">{d.anio}</strong>
+                            <strong className="text-white">{d.mes}</strong> ·
+                            <strong className="text-amber-400">{d.anio}</strong>
                             <span className="text-slate-500">({pay.metodo})</span>
                           </div>
                         </div>
@@ -802,6 +910,15 @@ export const MensualidadesView: React.FC<MensualidadesViewProps> = ({
           </div>
         </div>
       )}
+
+      {/* WHATSAPP REMINDER & LINKING MODAL */}
+      <WhatsAppReminderModal
+        isOpen={isWhatsAppModalOpen}
+        onClose={() => setIsWhatsAppModalOpen(false)}
+        overduePlayers={playersPendientes}
+        initialPlayer={whatsAppInitialPlayer}
+        period="Noviembre 2026"
+      />
     </div>
   );
 };
